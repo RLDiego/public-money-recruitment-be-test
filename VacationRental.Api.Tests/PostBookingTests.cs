@@ -1,8 +1,9 @@
 ﻿using System;
-using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using VacationRental.Api.Models;
+using VacationRental.Domain.DTO.Booking;
+using VacationRental.Domain.DTO.Common;
+using VacationRental.Domain.DTO.Rental;
 using Xunit;
 
 namespace VacationRental.Api.Tests
@@ -34,9 +35,9 @@ namespace VacationRental.Api.Tests
 
             var postBookingRequest = new BookingBindingModel
             {
-                 RentalId = postRentalResult.Id,
-                 Nights = 3,
-                 Start = new DateTime(2001, 01, 01)
+                RentalId = postRentalResult.Id,
+                Nights = 3,
+                Start = new DateTime(2001, 01, 01)
             };
 
             ResourceIdViewModel postBookingResult;
@@ -58,7 +59,48 @@ namespace VacationRental.Api.Tests
         }
 
         [Fact]
-        public async Task GivenCompleteRequest_WhenPostBooking_ThenAPostReturnsErrorWhenThereIsOverbooking()
+        public async Task GivenCompleteRequest_WhenPostTwoBooking_ThenTheSecondReturnBadRequestDueToPreparationTime()
+        {
+            var postRentalRequest = new RentalBindingModel
+            {
+                Units = 1,
+                PreparationTimeInDays = 3
+            };
+
+            ResourceIdViewModel postRentalResult;
+            using (var postRentalResponse = await _client.PostAsJsonAsync($"/api/v1/rentals", postRentalRequest))
+            {
+                Assert.True(postRentalResponse.IsSuccessStatusCode);
+                postRentalResult = await postRentalResponse.Content.ReadAsAsync<ResourceIdViewModel>();
+            }
+
+            var postBooking1Request = new BookingBindingModel
+            {
+                RentalId = postRentalResult.Id,
+                Nights = 3,
+                Start = new DateTime(2002, 01, 01)
+            };
+
+            using (var postBooking1Response = await _client.PostAsJsonAsync($"/api/v1/bookings", postBooking1Request))
+            {
+                Assert.True(postBooking1Response.IsSuccessStatusCode);
+            }
+
+            var postBooking2Request = new BookingBindingModel
+            {
+                RentalId = postRentalResult.Id,
+                Nights = 1,
+                Start = new DateTime(2002, 01, 05)
+            };
+            using (var postBooking2Response = await _client.PostAsJsonAsync($"/api/v1/bookings", postBooking2Request))
+            {
+                Assert.False(postBooking2Response.IsSuccessStatusCode);
+                Assert.Equal(System.Net.HttpStatusCode.BadRequest, postBooking2Response.StatusCode);
+            };
+        }
+
+        [Fact]
+        public async Task GivenCompleteRequest_WhenPostBooking_ThenAPostReturnsBadRequestWhenThereIsOverbooking()
         {
             var postRentalRequest = new RentalBindingModel
             {
@@ -90,13 +132,12 @@ namespace VacationRental.Api.Tests
                 Nights = 1,
                 Start = new DateTime(2002, 01, 02)
             };
-
-            await Assert.ThrowsAsync<ApplicationException>(async () =>
+            using (var postBooking2Response = await _client.PostAsJsonAsync($"/api/v1/bookings", postBooking2Request))
             {
-                using (var postBooking2Response = await _client.PostAsJsonAsync($"/api/v1/bookings", postBooking2Request))
-                {
-                }
-            });
+                Assert.False(postBooking2Response.IsSuccessStatusCode);
+                Assert.Equal(System.Net.HttpStatusCode.BadRequest, postBooking2Response.StatusCode);
+            };
+
         }
     }
 }

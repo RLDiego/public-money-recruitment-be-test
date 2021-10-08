@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VacationRental.Api.Models
+namespace VacationRental.Domain.DTO.Booking
 {
     public class BookingBindingModel
     {

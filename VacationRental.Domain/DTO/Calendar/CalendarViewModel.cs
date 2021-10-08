@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
-namespace VacationRental.Api.Models
-{
+namespace VacationRental.Domain.DTO.Calendar
+{ 
     public class CalendarViewModel
     {
         public int RentalId { get; set; }
