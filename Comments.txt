@@ -1,0 +1,5 @@
+what's left
+- adding a new CrossCut layer to add a log
+- improve the tests with the errors
+- add the reason phrase to the responses in case of error(if we want to show this information to the client)
+- move the dependences to another folder to avoid referencing Persistence in the controllers layer

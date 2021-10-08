@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
-using VacationRental.Api.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using System;
+using VacationRental.Domain.DTO.Rental;
+using VacationRental.Domain.Rentals;
 
 namespace VacationRental.Api.Controllers
 {
@@ -9,35 +9,53 @@ namespace VacationRental.Api.Controllers
     [ApiController]
     public class RentalsController : ControllerBase
     {
-        private readonly IDictionary<int, RentalViewModel> _rentals;
+        private readonly IRentalService rentalService;
 
-        public RentalsController(IDictionary<int, RentalViewModel> rentals)
+        public RentalsController(IRentalService rentalService)
         {
-            _rentals = rentals;
+            this.rentalService = rentalService;
         }
 
         [HttpGet]
         [Route("{rentalId:int}")]
-        public RentalViewModel Get(int rentalId)
+        public IActionResult Get(int rentalId)
         {
-            if (!_rentals.ContainsKey(rentalId))
-                throw new ApplicationException("Rental not found");
-
-            return _rentals[rentalId];
+            try
+            {
+                return Ok(this.rentalService.GetById(rentalId));
+            }
+            catch (ApplicationException)
+            {
+                return BadRequest();
+            }
         }
 
         [HttpPost]
-        public ResourceIdViewModel Post(RentalBindingModel model)
+        public IActionResult Post(RentalBindingModel model)
         {
-            var key = new ResourceIdViewModel { Id = _rentals.Keys.Count + 1 };
-
-            _rentals.Add(key.Id, new RentalViewModel
+            try
             {
-                Id = key.Id,
-                Units = model.Units
-            });
+                return Ok(this.rentalService.Add(model));
+            }
+            catch (ApplicationException)
+            {
+                return BadRequest();
+            }
+        }
 
-            return key;
+        [HttpPut]
+        [Route("{rentalId:int}")]
+        public IActionResult Put(int rentalId, RentalBindingModel model)
+        {
+            try
+            {
+                this.rentalService.Modify(rentalId, model);
+                return Ok();
+            }
+            catch (ApplicationException)
+            {
+                return BadRequest();
+            }
         }
     }
 }
